@@ -1,15 +1,24 @@
 import asyncio
 import base64
 import gzip
+import ujson
 import logging
 
 
-def encode_msg(msg: str):
+def encode_msg(msg: str) -> str:
     return base64.b64encode(gzip.compress(msg.encode('utf-8'))).decode('utf-8')
 
 
-def decode_msg(msg: str):
-    return gzip.decompress(base64.b64decode(msg))
+def decode_msg(msg: str) -> dict:
+    return ujson.loads(gzip.decompress(base64.b64decode(msg)))
+
+
+def encode_tag(tag: dict) -> str:
+    return base64.b64encode(ujson.dumps(tag).encode('utf-8')).decode('utf-8')
+
+
+def decode_tag(tag: str) -> dict:
+    return ujson.loads(base64.b64decode(tag))
 
 
 def queue_urls_to_names(queue_urls):

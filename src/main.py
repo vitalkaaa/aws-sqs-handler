@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 import aiobotocore
-import motor.motor_asyncio
 
 from src.config import Config
 from src.queue_processor import QueuesProcessor
@@ -28,7 +27,7 @@ async def main():
         storage = Storage(config)
         queue_processor = QueuesProcessor(sqs=sqs, storage=storage, config=config)
 
-        # await queue_processor.create_test_queues()
+        await queue_processor.create_test_queues()
 
         while True:
             asyncio.create_task(queue_processor.run())
@@ -36,4 +35,7 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

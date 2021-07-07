@@ -28,6 +28,14 @@ class WrappedSQS:
 
         return queue_urls
 
+    async def get_queue_tags(self, queue_url):
+        try:
+            response = await self._aws_client.list_queue_tags(QueueUrl=queue_url)
+        except ClientError as error:
+            raise error
+        else:
+            return response.get('Tags', dict())
+
     async def receive_messages(self, queue_url, batch_size):
         try:
             messages = await self._aws_client.receive_message(QueueUrl=queue_url,
@@ -58,8 +66,8 @@ class WrappedSQS:
         else:
             return response
         
-    async def create_queue(self, name):
-        return await self._aws_client.create_queue(QueueName=name)
+    async def create_queue(self, name, tags):
+        return await self._aws_client.create_queue(QueueName=name, tags=tags)
         
     async def send_message_batch(self, queue_url, entries):
         return await self._aws_client.send_message_batch(QueueUrl=queue_url, Entries=entries)
