@@ -15,21 +15,20 @@ class QueuesProcessor:
         self._sqs: WrappedSQS = sqs
 
     async def process_queue(self, queue_url, tags, batch_size=10):
-        if routes := tags.get('routes'):
-            routes = decode_tag(routes)
-        else:
-            routes = {}
-        logging.info(f'found tags {tags}')
-        logging.info(f'found routes {routes}')
+        routes = dict()
+        if tags.get('routes'):
+            routes = decode_tag(tags['routes'])
+
         is_empty_queue = False
         while not is_empty_queue:
             received_messages = await self._sqs.receive_messages(queue_url=queue_url, batch_size=batch_size)
             if received_messages.get('Messages'):
                 messages = [decode_msg(msg['Body']) for msg in received_messages['Messages']]
-                logging.info(f'Got {len(messages)} messages from {queue_url_to_name(queue_url)}')
                 documents = list(chain(*messages))  # list of lists needs to be flattened
-                # await self._storage.store(routes=routes, documents=documents)
-                # await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
+                logging.info(f'Got {len(messages)} messages ({len(documents)} documents) '
+                             f'from {queue_url_to_name(queue_url)}')
+                await self._storage.store(routes=routes, documents=documents)
+                await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
             else:
                 logging.info(f'Empty queue {queue_url_to_name(queue_url)}')
                 is_empty_queue = True
