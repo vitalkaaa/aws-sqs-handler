@@ -2,7 +2,7 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from src.util import queue_urls_to_names, queue_url_to_name
+from util import queue_urls_to_names, queue_url_to_name
 
 
 class WrappedSQS:

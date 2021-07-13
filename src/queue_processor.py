@@ -1,12 +1,11 @@
 import asyncio
-import json
 import logging
 from itertools import chain
 
-from src.config import Config
-from src.storage import Storage
-from src.util import decode_msg, queue_url_to_name, queue_urls_to_names, encode_msg, encode_tag, decode_tag
-from src.wrapped_sqs import WrappedSQS
+from config import Config
+from storage import Storage
+from util import decode_msg, queue_url_to_name, queue_urls_to_names, encode_msg, encode_tag, decode_tag
+from wrapped_sqs import WrappedSQS
 
 
 class QueuesProcessor:
@@ -16,23 +15,23 @@ class QueuesProcessor:
         self._sqs: WrappedSQS = sqs
 
     async def process_queue(self, queue_url, tags, batch_size=10):
-        routes = decode_tag(tags['routes'])
-        print(routes)
+        if routes := tags.get('routes'):
+            routes = decode_tag(routes)
+        else:
+            routes = {}
+        logging.info(f'found tags {tags}')
+        logging.info(f'found routes {routes}')
         is_empty_queue = False
         while not is_empty_queue:
             received_messages = await self._sqs.receive_messages(queue_url=queue_url, batch_size=batch_size)
             if received_messages.get('Messages'):
-                documents = [decode_msg(msg['Body']) for msg in received_messages['Messages']]
-                logging.info(f'Got {len(documents)} messages from {queue_url_to_name(queue_url)}')
-                documents = list(chain(*documents))  # list of lists needs to be flattened
-
-                # await self._storage.store_to_mongo(collection=test_collection', documents=documents)
-                # await self._storage.store_to_es(index='test', documents=documents)
-                await self._storage.store_to_files(filename_prefix='test', documents=documents)
-
-                await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
+                messages = [decode_msg(msg['Body']) for msg in received_messages['Messages']]
+                logging.info(f'Got {len(messages)} messages from {queue_url_to_name(queue_url)}')
+                documents = list(chain(*messages))  # list of lists needs to be flattened
+                # await self._storage.store(routes=routes, documents=documents)
+                # await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
             else:
-                logging.debug(f'Empty queue')
+                logging.info(f'Empty queue {queue_url_to_name(queue_url)}')
                 is_empty_queue = True
 
     async def run(self):

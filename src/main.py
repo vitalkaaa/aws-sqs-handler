@@ -1,15 +1,20 @@
+import argparse
 import asyncio
 import logging
 
 import aiobotocore
 
-from src.config import Config
-from src.queue_processor import QueuesProcessor
-from src.storage import Storage
-from src.wrapped_sqs import WrappedSQS
+from config import Config
+from queue_processor import QueuesProcessor
+from storage import Storage
+from wrapped_sqs import WrappedSQS
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type=str, help="Config file")
+args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(funcName)s(%(lineno)d): %(message)s')
-config = Config('config.json')
+config = Config(args.config)
 
 
 async def main():
@@ -27,7 +32,7 @@ async def main():
         storage = Storage(config)
         queue_processor = QueuesProcessor(sqs=sqs, storage=storage, config=config)
 
-        await queue_processor.create_test_queues()
+        # await queue_processor.create_test_queues()
 
         while True:
             asyncio.create_task(queue_processor.run())
