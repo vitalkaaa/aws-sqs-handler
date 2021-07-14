@@ -1,8 +1,18 @@
 version: "3"
 services:
-  test:
-    container_name: "test"
+  sqs-handler:
+    container_name: sqs-handler
     build: .
     volumes:
       - .:/app
     command: python3 src/main.py --config configs/config.json
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  mongo:
+    container_name: mongo
+    image: mongo
+    deploy:
+      restart_policy:
+        condition: on-failure
