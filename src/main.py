@@ -35,7 +35,7 @@ async def main():
         # await queue_processor.create_test_queues()
 
         while True:
-            asyncio.create_task(queue_processor.run())
+            await asyncio.create_task(queue_processor.run())
             await asyncio.sleep(TIMEOUT_BETWEEN_QUEUE_CHECKING)
 
 
