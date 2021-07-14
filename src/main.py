@@ -6,6 +6,7 @@ import aiobotocore
 
 from config import Config
 from queue_processor import QueuesProcessor
+from src.util import queue_urls_to_names
 from storage import Storage
 from wrapped_sqs import WrappedSQS
 
@@ -35,7 +36,13 @@ async def main():
         # await queue_processor.create_test_queues()
 
         while True:
-            await asyncio.create_task(queue_processor.run())
+            running_tasks = [task for task in asyncio.Task.all_tasks() if not task.done()]
+            done_tasks = [task for task in asyncio.Task.all_tasks() if task.done()]
+
+            logging.info(f'Running tasks: {len(running_tasks)}, Done tasks: {len(done_tasks)}')
+            logging.info(f'Queues in process: {queue_urls_to_names(queue_processor.running_queues)}')
+
+            asyncio.create_task(queue_processor.run())
             await asyncio.sleep(TIMEOUT_BETWEEN_QUEUE_CHECKING)
 
 

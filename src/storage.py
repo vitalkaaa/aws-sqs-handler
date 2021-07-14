@@ -22,7 +22,6 @@ class Storage:
             await col.insert_many(documents)
             logging.info(f'Stored to mongo {len(documents)} documents in {collection}')
         except Exception as error:
-            # logging.exception(f'Can\'t store to mongo', exc_info=False)
             raise error
 
     async def store_to_es(self, index, documents):
@@ -30,7 +29,6 @@ class Storage:
             res = await async_bulk(self._es_client, ({'_index': index, 'doc': d} for d in documents))
             logging.info(f'Stored to es {res[0]} documents in {index}')
         except Exception as error:
-            logging.exception('Can\'t store to elasticsearch', exc_info=False)
             raise error
 
     async def store_to_files(self, directory, filename_prefix, documents):
@@ -44,7 +42,6 @@ class Storage:
                     await file.write(f'{json.dumps(d)}\n')
             logging.info(f'Stored to file {filename} {len(documents)} documents')
         except Exception as error:
-            logging.exception('Can\'t store to file', exc_info=False)
             raise error
 
     async def store(self, routes, documents):
