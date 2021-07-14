@@ -37,8 +37,7 @@ class QueuesProcessor:
                 except Exception as error:
                     raise error
                 else:
-                    pass
-                    # await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
+                    await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
             else:
                 is_empty_queue = True
 
