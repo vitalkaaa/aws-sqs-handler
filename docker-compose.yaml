@@ -15,8 +15,6 @@ services:
     container_name: mongo
     image: mongo
     network_mode: host
-    ports:
-      - 27017:27017
     deploy:
       restart_policy:
         condition: on-failure

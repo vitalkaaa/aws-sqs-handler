@@ -6,7 +6,7 @@ import aiobotocore
 
 from config import Config
 from queue_processor import QueuesProcessor
-from src.util import queue_urls_to_names
+from util import queue_urls_to_names
 from storage import Storage
 from wrapped_sqs import WrappedSQS
 
