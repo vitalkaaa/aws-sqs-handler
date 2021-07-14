@@ -13,6 +13,11 @@ class QueuesProcessor:
         self._config: Config = config
         self._storage: Storage = storage
         self._sqs: WrappedSQS = sqs
+        self._running_queues = dict()
+
+    def is_maximum_workers(self, queue_url):
+        current_workers_num = self._running_queues.get(queue_url, 0)
+        return current_workers_num + self._config['INIT_WORKERS_PER_QUEUE'] > self._config['MAX_WORKERS_PER_QUEUE']
 
     async def process_queue(self, queue_url, tags, batch_size=10):
         routes = dict()
@@ -27,23 +32,37 @@ class QueuesProcessor:
                 documents = list(chain(*messages))  # list of lists needs to be flattened
                 logging.info(f'Got {len(messages)} messages ({len(documents)} documents) '
                              f'from {queue_url_to_name(queue_url)}')
-                await self._storage.store(routes=routes, documents=documents)
-                await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
+                try:
+                    await self._storage.store(routes=routes, documents=documents)
+                except Exception as error:
+                    raise error
+                else:
+                    pass
+                    # await self._sqs.delete_messages(queue_url=queue_url, messages=received_messages)
             else:
-                logging.info(f'Empty queue {queue_url_to_name(queue_url)}')
                 is_empty_queue = True
 
     async def run(self):
+        INIT_WORKERS_PER_QUEUE = self._config['INIT_WORKERS_PER_QUEUE']
         queue_urls = await self._sqs.get_queue_list(prefixes=self._config['QUEUE_PREFIX'])
-        logging.info(f'run processing queues: {queue_urls_to_names(queue_urls)}')
 
         queue_processors = []
         for queue_url in queue_urls:
+            if self.is_maximum_workers(queue_url):
+                continue
+
             queue_tags = await self._sqs.get_queue_tags(queue_url=queue_url)
-            workers = [self.process_queue(queue_url=queue_url, tags=queue_tags)]*self._config['WORKERS_PER_QUEUE']
+            workers = [self.process_queue(queue_url=queue_url, tags=queue_tags) for _ in range(INIT_WORKERS_PER_QUEUE)]
+            self._running_queues[queue_url] = self._running_queues.get(queue_url, 0) + len(workers)
+            logging.info(f'Running workers for {queue_url_to_name(queue_url)}: {self._running_queues[queue_url]}')
             queue_processors.append(asyncio.gather(*workers))
 
-        await asyncio.gather(*queue_processors, return_exceptions=True)
+        results = await asyncio.gather(*queue_processors, return_exceptions=True)
+
+        for i, queue_url in enumerate(queue_urls):
+            self._running_queues[queue_url] -= INIT_WORKERS_PER_QUEUE
+            if isinstance(results[i], Exception):
+                logging.exception(f'Error when processing {queue_url_to_name(queue_url)}: {results[i]}')
 
     async def create_test_queues(self):
         with open('resources/example2.json') as file:

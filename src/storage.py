@@ -19,17 +19,19 @@ class Storage:
         try:
             db = self._mongo_client[database]
             col = db[collection]
-            logging.info(f'Stored to mongo {len(documents)} documents in {collection}')
             await col.insert_many(documents)
-        except:
-            logging.exception(f'Can\'t store to mongo')
+            logging.info(f'Stored to mongo {len(documents)} documents in {collection}')
+        except Exception as error:
+            # logging.exception(f'Can\'t store to mongo', exc_info=False)
+            raise error
 
     async def store_to_es(self, index, documents):
         try:
             res = await async_bulk(self._es_client, ({'_index': index, 'doc': d} for d in documents))
             logging.info(f'Stored to es {res[0]} documents in {index}')
-        except:
-            logging.exception('Can\'t store to elasticsearch')
+        except Exception as error:
+            logging.exception('Can\'t store to elasticsearch', exc_info=False)
+            raise error
 
     async def store_to_files(self, directory, filename_prefix, documents):
         try:
@@ -41,8 +43,9 @@ class Storage:
                 for d in documents:
                     await file.write(f'{json.dumps(d)}\n')
             logging.info(f'Stored to file {filename} {len(documents)} documents')
-        except:
-            logging.exception('Can\'t store to file')
+        except Exception as error:
+            logging.exception('Can\'t store to file', exc_info=False)
+            raise error
 
     async def store(self, routes, documents):
         if 'mongo' in routes:
