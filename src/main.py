@@ -33,8 +33,6 @@ async def main():
         storage = Storage(config)
         queue_processor = QueuesProcessor(sqs=sqs, storage=storage, config=config)
 
-        # await queue_processor.create_test_queues()
-
         while True:
             running_tasks = [task for task in asyncio.all_tasks() if not task.done()]
             done_tasks = [task for task in asyncio.all_tasks() if task.done()]

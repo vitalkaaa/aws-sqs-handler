@@ -58,26 +58,3 @@ class QueuesProcessor:
                 task = asyncio.create_task(self.process_queue(queue_url=queue_url, tags=queue_tags))
                 task.set_name(task_name)
                 task.add_done_callback(functools.partial(self._handle_task_result, queue_url))
-
-    async def create_test_queues(self):
-        with open('resources/example2.json') as file:
-            body = f'[{encode_msg(file.read())}]'  # 1 message is json list with N elements
-            entries = [{'Id': str(i), 'MessageBody': body} for i in range(10)]
-
-        groups = []
-        tags = {
-            'routes':  encode_tag({
-                'mongo': 'digitalwave',
-                'elasticsearch': 'digitalwave',
-                's3': 'digitalwave',
-                'file': 'digitalwave'
-            })}
-        for qresp in asyncio.as_completed([self._sqs.create_queue(name=f'Queue{i}', tags=tags) for i in range(0, 2)]):
-            queue_url = (await qresp)['QueueUrl']
-            logging.info(f'created queue: {queue_url_to_name(queue_url)}')
-
-            group = asyncio.gather(*[self._sqs.send_message_batch(queue_url=queue_url, entries=entries)
-                                     for _ in range(10)])
-            groups.append(group)
-
-        await asyncio.gather(*groups)

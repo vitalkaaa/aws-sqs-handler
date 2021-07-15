@@ -1,0 +1,20 @@
+{
+    "AWS": {
+        "ACCESS_KEY_ID": "*",
+        "SECRET_ACCESS_KEY": "*",
+        "REGION_NAME": "*"
+    },
+    "MONGODB": {
+        "URL": "mongodb://localhost:27017"
+    },
+    "ELASTICSEARCH": {
+        "URL": "http://localhost:9200"
+    },
+    "FILES": {
+        "PATH": "/tmp"
+    },
+    "WORKERS_PER_QUEUE": 2,
+    "TIMEOUT_BETWEEN_QUEUE_CHECKING": 3,
+    "QUEUE_PREFIX": ["Prefix"]
+
+}
