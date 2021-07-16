@@ -3,7 +3,7 @@ import logging
 
 
 class Config:
-    def __init__(self, path):
+    def __init__(self, path: str):
         try:
             with open(path) as file:
                 self._config = json.loads(file.read())
@@ -14,5 +14,5 @@ class Config:
             logging.error(f'Config-file {path} is not found')
             exit(1)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str):
         return self._config[item]

@@ -21,11 +21,11 @@ def decode_tag(tag: str) -> dict:
     return ujson.loads(base64.b64decode(tag))
 
 
-def queue_urls_to_names(queue_urls):
+def queue_urls_to_names(queue_urls: str) -> list:
     return [queue_url.split('/')[-1] for queue_url in queue_urls]
 
 
-def queue_url_to_name(queue_url):
+def queue_url_to_name(queue_url: str) -> str:
     return queue_url.split('/')[-1]
 
 

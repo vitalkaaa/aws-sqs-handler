@@ -9,7 +9,7 @@ class WrappedSQS:
     def __init__(self, aws_client):
         self._aws_client = aws_client
 
-    async def get_queue_list(self, prefixes=None):
+    async def get_queue_list(self, prefixes: list = None):
         queue_urls = []
 
         if not prefixes:
@@ -28,7 +28,7 @@ class WrappedSQS:
 
         return queue_urls
 
-    async def get_queue_tags(self, queue_url):
+    async def get_queue_tags(self, queue_url: str) -> dict:
         try:
             response = await self._aws_client.list_queue_tags(QueueUrl=queue_url)
         except ClientError as error:
@@ -36,7 +36,7 @@ class WrappedSQS:
         else:
             return response.get('Tags', dict())
 
-    async def receive_messages(self, queue_url, batch_size):
+    async def receive_messages(self, queue_url: str, batch_size: int) -> dict:
         try:
             messages = await self._aws_client.receive_message(QueueUrl=queue_url,
                                                               AttributeNames=['ALL'],
@@ -48,7 +48,7 @@ class WrappedSQS:
         else:
             return messages
 
-    async def delete_messages(self, queue_url, messages):
+    async def delete_messages(self, queue_url: str, messages: dict) -> dict:
         entries = [{'Id': str(ind), 'ReceiptHandle': msg['ReceiptHandle']} for ind, msg in
                    enumerate(messages['Messages'])]
         try:
@@ -66,10 +66,10 @@ class WrappedSQS:
         else:
             return response
 
-    async def create_queue(self, name, tags):
+    async def create_queue(self, name: str, tags: list) -> dict:
         return await self._aws_client.create_queue(QueueName=name, tags=tags)
 
-    async def is_queue_empty(self, queue_url):
+    async def is_queue_empty(self, queue_url: str) -> bool:
         try:
             attributes = await self._aws_client.get_queue_attributes(QueueUrl=queue_url,
                                                                      AttributeNames=['ApproximateNumberOfMessages'])
@@ -79,5 +79,5 @@ class WrappedSQS:
         else:
             return int(attributes['Attributes']['ApproximateNumberOfMessages']) == 0
 
-    async def send_message_batch(self, queue_url, entries):
+    async def send_message_batch(self, queue_url: str, entries: list):
         return await self._aws_client.send_message_batch(QueueUrl=queue_url, Entries=entries)

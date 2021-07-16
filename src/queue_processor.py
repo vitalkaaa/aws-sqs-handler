@@ -10,13 +10,13 @@ from wrapped_sqs import WrappedSQS
 
 
 class QueuesProcessor:
-    def __init__(self, sqs, storage, config):
+    def __init__(self, sqs: WrappedSQS, storage: Storage, config: Config):
         self._config: Config = config
         self._storage: Storage = storage
         self._sqs: WrappedSQS = sqs
         self.running_queues = set()
 
-    def _handle_task_result(self, queue_url, task: asyncio.Task):
+    def _handle_task_result(self, queue_url: str, task: asyncio.Task) -> None:
         try:
             task.result()
         except Exception as error:
@@ -24,7 +24,7 @@ class QueuesProcessor:
         finally:
             self.running_queues.discard(queue_url)
 
-    async def process_queue(self, queue_url, tags, batch_size=10):
+    async def process_queue(self, queue_url: str, tags: dict, batch_size: int = 10) -> None:
         self.running_queues.add(queue_url)
         routes = dict()
         if tags.get('routes'):
@@ -43,7 +43,7 @@ class QueuesProcessor:
             else:
                 break
 
-    async def run(self):
+    async def run(self) -> None:
         WORKERS_PER_QUEUE = self._config['WORKERS_PER_QUEUE']
         queue_urls = await self._sqs.get_queue_list(prefixes=self._config['QUEUE_PREFIX'])
 
