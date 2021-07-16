@@ -65,9 +65,19 @@ class WrappedSQS:
             raise error
         else:
             return response
-        
+
     async def create_queue(self, name, tags):
         return await self._aws_client.create_queue(QueueName=name, tags=tags)
-        
+
+    async def is_queue_empty(self, queue_url):
+        try:
+            attributes = await self._aws_client.get_queue_attributes(QueueUrl=queue_url,
+                                                                     AttributeNames=['ApproximateNumberOfMessages'])
+        except ClientError as error:
+            logging.exception(f"Couldn't check attributes of queue: {queue_url}")
+            raise error
+        else:
+            return int(attributes['Attributes']['ApproximateNumberOfMessages']) == 0
+
     async def send_message_batch(self, queue_url, entries):
         return await self._aws_client.send_message_batch(QueueUrl=queue_url, Entries=entries)

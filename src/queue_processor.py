@@ -5,7 +5,7 @@ from itertools import chain
 
 from config import Config
 from storage import Storage
-from util import decode_msg, queue_url_to_name, queue_urls_to_names, encode_msg, encode_tag, decode_tag
+from util import decode_msg, queue_url_to_name, decode_tag
 from wrapped_sqs import WrappedSQS
 
 
@@ -48,7 +48,7 @@ class QueuesProcessor:
         queue_urls = await self._sqs.get_queue_list(prefixes=self._config['QUEUE_PREFIX'])
 
         for queue_url in queue_urls:
-            if queue_url in self.running_queues:
+            if queue_url in self.running_queues or await self._sqs.is_queue_empty(queue_url):
                 continue
 
             queue_tags = await self._sqs.get_queue_tags(queue_url=queue_url)
