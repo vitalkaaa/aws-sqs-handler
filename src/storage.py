@@ -55,6 +55,6 @@ class Storage:
             await self.store_to_es(index=routes['elasticsearch']['space'],
                                    documents=documents)
         elif 'file' in routes:
-            await self.store_to_files(directory=routes['elasticsearch']['database'],
-                                      filename_prefix=routes['elasticsearch']['space'],
+            await self.store_to_files(directory=routes['file']['database'],
+                                      filename_prefix=routes['file']['space'],
                                       documents=documents)
