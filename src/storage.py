@@ -58,3 +58,5 @@ class Storage:
             await self.store_to_files(directory=routes['file']['database'],
                                       filename_prefix=routes['file']['space'],
                                       documents=documents)
+        else:
+            raise Exception(f'Error when storing. Bad key in routes: {routes}')
