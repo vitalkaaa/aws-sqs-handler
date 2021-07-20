@@ -18,7 +18,7 @@ class WrappedSQS:
         for prefix in prefixes:
             try:
                 response = await self._aws_client.list_queues(QueueNamePrefix=prefix)
-            except ClientError as error:
+            except Exception as error:
                 logging.exception(f"Couldn't get queue list with prefix {prefix}")
                 raise error
             else:
@@ -31,7 +31,7 @@ class WrappedSQS:
     async def get_queue_tags(self, queue_url: str) -> dict:
         try:
             response = await self._aws_client.list_queue_tags(QueueUrl=queue_url)
-        except ClientError as error:
+        except Exception as error:
             raise error
         else:
             return response.get('Tags', dict())
@@ -42,7 +42,7 @@ class WrappedSQS:
                                                               AttributeNames=['ALL'],
                                                               WaitTimeSeconds=1,
                                                               MaxNumberOfMessages=batch_size)
-        except ClientError as error:
+        except Exception as error:
             logging.exception(f"Couldn't receive messages from queue: {queue_url}")
             raise error
         else:
@@ -60,7 +60,7 @@ class WrappedSQS:
                 logging.info(f'Successfully deleted {len(response["Successful"])} from {queue_url_to_name(queue_url)}')
             if response.get('Failed'):
                 logging.info(f'Failed when deleting {len(response["Failed"])}  from {queue_url_to_name(queue_url)}')
-        except ClientError as error:
+        except Exception as error:
             logging.exception(f"Couldn't delete messages from queue: {queue_url}")
             raise error
         else:
@@ -73,7 +73,7 @@ class WrappedSQS:
         try:
             attributes = await self._aws_client.get_queue_attributes(QueueUrl=queue_url,
                                                                      AttributeNames=['ApproximateNumberOfMessages'])
-        except ClientError as error:
+        except Exception as error:
             logging.exception(f"Couldn't check attributes of queue: {queue_url}")
             raise error
         else:
