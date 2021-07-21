@@ -28,6 +28,7 @@ class Storage:
 
     async def store_to_es(self, index: str, documents: list) -> None:
         try:
+            index = index.lower()
             res = await async_bulk(self._es_client, ({'_index': index, 'doc': d} for d in documents))
             logging.info(f'Stored to es {res[0]} documents in {index}')
         except Exception as error:
