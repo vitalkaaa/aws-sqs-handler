@@ -47,22 +47,17 @@ class Storage:
             raise error
 
     async def store(self, routes: dict, documents: list) -> None:
-        _storage_coros = {
-            'mongo': self.store_to_mongo(database=routes['mongo']['database'],
-                                         collection=routes['mongo']['space'],
-                                         documents=documents),
-            'file': self.store_to_files(directory=routes['file']['database'],
-                                        filename_prefix=routes['file']['space'],
-                                        documents=documents),
-            'elasticsearch': self.store_to_es(index=routes['elasticsearch']['space'],
-                                              documents=documents)
-        }
         if not routes:
             raise Exception('Empty storage routes')
 
-        for storage_key in routes:
-            coro = _storage_coros.get(storage_key)
-            if coro:
-                await coro
-            else:
-                logging.error(f'Bad route key {storage_key} with {routes[storage_key]}')
+        if 'mongo' in routes:
+            await self.store_to_mongo(database=routes['mongo']['database'],
+                                      collection=routes['mongo']['space'],
+                                      documents=documents)
+        if 'elasticsearch' in routes:
+            await self.store_to_es(index=routes['elasticsearch']['space'],
+                                   documents=documents)
+        if 'file' in routes:
+            await self.store_to_files(directory=routes['file']['database'],
+                                      filename_prefix=routes['file']['space'],
+                                      documents=documents)

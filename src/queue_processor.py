@@ -20,7 +20,7 @@ class QueuesProcessor:
         try:
             task.result()
         except Exception as error:
-            logging.exception(f'Error in {task.get_name()} worker: {error}', exc_info=False)
+            logging.exception(f'Error in {task.get_name()} worker: {error}', exc_info=True)
         finally:
             self.running_queues.discard(queue_url)
 
