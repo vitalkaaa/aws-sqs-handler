@@ -24,11 +24,8 @@ class QueuesProcessor:
         finally:
             self.running_queues.discard(queue_url)
 
-    async def process_queue(self, queue_url: str, tags: dict, batch_size: int = 10) -> None:
+    async def process_queue(self, queue_url: str, routes: dict, batch_size: int = 10) -> None:
         self.running_queues.add(queue_url)
-        routes = dict()
-        if tags.get('routes'):
-            routes = decode_tag(tags['routes'])
 
         while True:
             received_messages = await self._sqs.receive_messages(queue_url=queue_url, batch_size=batch_size)
@@ -51,10 +48,14 @@ class QueuesProcessor:
             if queue_url in self.running_queues or await self._sqs.is_queue_empty(queue_url):
                 continue
 
+            routes = dict()
             queue_tags = await self._sqs.get_queue_tags(queue_url=queue_url)
+            if queue_tags.get('routes'):
+                routes = decode_tag(queue_tags['routes'])
+            logging.info(f'Routes for {queue_url}: {routes}')
 
             for i in range(WORKERS_PER_QUEUE):
                 task_name = f'{queue_url_to_name(queue_url)}-{i}'
-                task = asyncio.create_task(self.process_queue(queue_url=queue_url, tags=queue_tags))
+                task = asyncio.create_task(self.process_queue(queue_url=queue_url, routes=routes))
                 task.set_name(task_name)
                 task.add_done_callback(functools.partial(self._handle_task_result, queue_url))
