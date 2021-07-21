@@ -52,7 +52,7 @@ class QueuesProcessor:
             queue_tags = await self._sqs.get_queue_tags(queue_url=queue_url)
             if queue_tags.get('routes'):
                 routes = decode_tag(queue_tags['routes'])
-            logging.info(f'Routes for {queue_url}: {routes}')
+            logging.info(f'Routes for {queue_url_to_name(queue_url)}: {routes}')
 
             for i in range(WORKERS_PER_QUEUE):
                 task_name = f'{queue_url_to_name(queue_url)}-{i}'
