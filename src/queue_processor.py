@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import random
 from itertools import chain
 
 from config import Config
@@ -14,7 +15,17 @@ class QueuesProcessor:
         self._config: Config = config
         self._storage: Storage = storage
         self._sqs: WrappedSQS = sqs
-        self.running_queues = set()
+        self.running_workers = dict()
+
+    def _inc_queue_worker_num(self, queue_url):
+        queue_name = queue_url_to_name(queue_url)
+        self.running_workers[queue_name] = self.running_workers.get(queue_name, 0) + 1
+
+    def _dec_queue_workers_num(self, queue_url):
+        queue_name = queue_url_to_name(queue_url)
+        self.running_workers[queue_name] = self.running_workers.get(queue_name, 0) - 1
+        if self.running_workers[queue_name] == 0:
+            self.running_workers.pop(queue_name)
 
     def _handle_task_result(self, queue_url: str, task: asyncio.Task) -> None:
         try:
@@ -22,10 +33,10 @@ class QueuesProcessor:
         except Exception as error:
             logging.exception(f'Error in {task.get_name()} worker: {error}', exc_info=False)
         finally:
-            self.running_queues.discard(queue_url)
+            self._dec_queue_workers_num(queue_url)
 
     async def process_queue(self, queue_url: str, routes: dict, batch_size: int = 10) -> None:
-        self.running_queues.add(queue_url)
+        self._inc_queue_worker_num(queue_url)
 
         while True:
             received_messages = await self._sqs.receive_messages(queue_url=queue_url, batch_size=batch_size)
@@ -45,7 +56,7 @@ class QueuesProcessor:
         queue_urls = await self._sqs.get_queue_list(prefixes=self._config['QUEUE_PREFIX'])
 
         for queue_url in queue_urls:
-            if queue_url in self.running_queues or await self._sqs.is_queue_empty(queue_url):
+            if queue_url_to_name(queue_url) in self.running_workers or await self._sqs.is_queue_empty(queue_url):
                 continue
 
             routes = dict()
